@@ -10,8 +10,8 @@ subscriber.setsockopt(ZMQ::SUBSCRIBE, zip) # subscribe to zip code
 
 sample_size = 100
 total_temp = 0
-sample_size.times do |update_nbr|
-  subscriber.recv_string(msg = '')#.split.map(&:to_i)
+sample_size.times do
+  subscriber.recv_string(msg = '')
 
   zipcode, temperature, relhumidity = msg.split.map(&:to_i)
   total_temp += temperature
