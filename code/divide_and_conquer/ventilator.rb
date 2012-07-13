@@ -9,6 +9,8 @@ puts "Press enter when the workers are ready"
 $stdin.read(1)
 puts "Sending tasks to workers"
 
+sender.send_string '0' # start
+
 total_msec = 0
 100.times do
   workload = rand(100) + 1
@@ -17,7 +19,6 @@ total_msec = 0
   sender.send_string(workload.to_s)
 end
 
-sender.send_string '0' # last message
 
 puts "\nTotal expected cost: #{total_msec} msec"
 
