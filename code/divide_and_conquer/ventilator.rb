@@ -19,6 +19,6 @@ end
 
 sender.send_string '0' # last message
 
-puts "Total expected cost: #{total_msec} msec"
+puts "\nTotal expected cost: #{total_msec} msec"
 
 ctx.terminate

@@ -15,4 +15,5 @@ end
 
 tend = Time.now
 total_msec = (tend-tstart) * 1000
-puts "Total elapsed time: #{total_msec} msec"
+
+puts "\nTotal elapsed time: #{total_msec} msec"
