@@ -1,2 +1,5 @@
-This repo contains the slides and code for my talk on ZeroMQ. Should be done by tomorrow.
+To run the code you need to install ffi-rzmq:
 
+```
+sudo gem install ffi-rzmq
+```
