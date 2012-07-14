@@ -19,22 +19,14 @@
 	<link rel="stylesheet" href="../extensions/status/deck.status.css">
 	<link rel="stylesheet" href="../extensions/hash/deck.hash.css">
 	<link rel="stylesheet" href="../extensions/scale/deck.scale.css">
-<!--
+
   <link rel="stylesheet" href="../extensions/codemirror/deck.codemirror.css">
 
-  <script src="../extensions/codemirror/codemirror.js"></script>
-  <script src="../extensions/codemirror/mode/javascript/javascript.js"></script>
-  <script src="../extensions/codemirror/mode/xml/xml.js"></script>
-  <script src="../extensions/codemirror/mode/css/css.js"></script>
-  <script src="../extensions/codemirror/mode/htmlmixed/htmlmixed.js"></script>
-
-  <script src="../extensions/codemirror/deck.codemirror.js"></script>
--->
 
 	<!-- Style theme. More available in /themes/style/ or create your own. -->
 	<link rel="stylesheet" href="../themes/style/swiss.css">
 
-  <!--<link rel="stylesheet" href="../extensions/codemirror/themes/default.css"> -->
+  <link rel="stylesheet" href="../extensions/codemirror/themes/default.css">
 
 	<!-- Transition theme. More available in /themes/transition/ or create your own. -->
 	<link rel="stylesheet" href="../themes/transition/horizontal-slide.css">
@@ -58,30 +50,34 @@
   <img src="images/ptp.gif" alt="Message Queue">
 </section>
 
+<section class="slide" id="brokers">
+	<h2>Brokers</h2>
+  <p>Brokers run as an independent process and provide a single point for communication</p>
+	<img src="images/post-office-line.jpeg" alt="post office line">
+</section>
+
+<section class="slide" id="brokerless">
+	<h2>ØMQ is Brokerless</h2>
+  <p>Every ØMQ socket has it's own queue and there is no central authority<p>
+	<img src="images/mailbox.jpeg" alt="mailbox">
+</section>
+
+
 <section class="slide" id="what-is">
-	<h2>What is ØMQ?</h2>
+	<h2>Wtf is ØMQ then?</h2>
   <p>ZeroMQ is a high-performance asynchronous messaging library aimed at use in scalable distributed or concurrent applications</p>
 	<img src="images/ZMQ-Basic.png" alt="ZMQ queues">
 </section>
 
-<section class="slide" id="what-isnt-it">
-	<h2>How is this different from ActiveMQ or RabbitMQ?</h2>
-  <ol>
-    <li>
-      <p>It's  brokerless</p>
-    </li>
-    <li>
-      <p>Some assembly required. It's a toolkit not a solution</p>
-    </li>
-    <li>
-      <p>ZeroMQ destroys other in performance</p>
-    </li>
-  </ol>
+<section class="slide" id="simple-server-diagram">
+  <h2>Simple Request/Response</h2>
+	<img src="images/req-rep.png" alt="request response diagram">
 </section>
 
-<section class="slide" id="simple-server">
+<section class="slide" id="simple-server-code">
   <h2>Simple Server: rep.rb</h2>
-  <pre><code>require 'ffi-rzmq'
+  <textarea id="code" name="code" class="code" mode="ruby" style="display: none;">
+require 'ffi-rzmq'
 
 ctx = ZMQ::Context.new
 
@@ -93,12 +89,14 @@ loop do
 
   puts "Client: #{msg}"
   sock.send_string "Ohai #{msg}"
-end</code></pre>
+end
+  </textarea>
 </section>
 
 <section class="slide" id="simple-client">
   <h2>Simple Client: req.rb</h2>
-  <pre><code>require 'ffi-rzmq'
+  <textarea id="code" name="code" class="code" mode="ruby" style="display: none;">
+require 'ffi-rzmq'
 
 ctx = ZMQ::Context.new
 
@@ -109,12 +107,14 @@ sock.send_string 'BarCampers'
 
 sock.recv_string(msg = '')
 
-puts msg</code></pre>
+puts msg
+  </textarea>
 </section>
 
 <section class="slide" id="simple-non-blocking-client">
   <h2>Non-Blocking: req_non_blocking.rb</h2>
-  <pre><code>require 'ffi-rzmq'
+  <textarea id="code" name="code" class="code" mode="ruby" style="display: none;">
+require 'ffi-rzmq'
 
 ctx = ZMQ::Context.new
 
@@ -127,11 +127,65 @@ puts 'Message Sent'
 
 sock.recv_string(msg = '')
 
-puts msg</code></pre>
+puts msg
+  </textarea>
 </section>
 
 
+<section class="slide" id="pub-sub-diagram">
+  <h2>Publish and Subscribe</h2>
+	<img src="images/pub-sub.png" alt="pub sub diagram">
+</section>
 
+<section class="slide" id="weather-server-code">
+  <h2>Weather Server: server.rb</h2>
+  <textarea id="code" name="code" class="code" mode="ruby" style="display: none;">
+require 'ffi-rzmq'
+
+ctx = ZMQ::Context.new
+
+publisher = ctx.socket ZMQ::PUB
+publisher.bind 'tcp://*:1337'
+
+loop do
+  zipcode = rand(1_000) + 10_000
+  temperature = rand(215) - 80
+  relhumidity = rand(50) + 10
+
+  update = "#{zipcode} #{temperature} #{relhumidity}"
+  puts update
+
+  publisher.send_string update
+end
+  </textarea>
+</section>
+
+<section class="slide" id="pub-sub-client">
+  <h2>Weather Subscriber: client.rb</h2>
+  <textarea id="code" name="code" class="code" mode="ruby" style="display: none;">
+require 'ffi-rzmq'
+
+ctx = ZMQ::Context.new
+
+subscriber = ctx.socket ZMQ::SUB
+subscriber.connect 'tcp://127.0.0.1:1337'
+
+zip = '10001'
+subscriber.setsockopt(ZMQ::SUBSCRIBE, zip) # subscribe to zip code
+
+sample_size = 100
+total_temp = 0
+
+sample_size.times do
+  subscriber.recv_string(msg = '')
+
+  zipcode, temperature, relhumidity = msg.split.map(&:to_i)
+  total_temp += temperature
+end
+
+puts "Average temperature for zipcode '#{zip}' was #{total_temp / sample_size}F"
+</textarea>
+</section>
 
 
 
@@ -178,6 +232,117 @@ puts msg</code></pre>
 $(function() {
 	$.deck('.slide');
 });
+</script>
+
+<script src="../extensions/codemirror/codemirror.js"></script>
+
+<script src="../extensions/codemirror/mode/javascript/javascript.js"></script>
+
+<script src="../extensions/codemirror/mode/xml/xml.js"></script>
+<script src="../extensions/codemirror/mode/css/css.js"></script>
+<script src="../extensions/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+
+<script src="../extensions/codemirror/deck.codemirror.js"></script>
+
+<script>
+
+CodeMirror.defineMode("ruby", function(config, parserConfig) {
+  var indentUnit = config.indentUnit;
+
+  function prefixRE(words) {
+    return new RegExp("^(?:" + words.join("|") + ")", "i");
+  }
+  function wordRE(words) {
+    return new RegExp("^(?:" + words.join("|") + ")$", "i");
+  }
+  var specials = wordRE(parserConfig.specials || []);
+ 
+  // long list of standard functions from lua manual
+  var builtins = wordRE([
+      'puts', 'Array', 'Float', 'Integer', 'String', 'at_exit', 'autoload', 'binding',
+      'caller', 'catch', 'chomp', 'eval', 'exec', 'exit', 'fail', 'fork', 'format',
+      'gets', 'gsub', 'iterator', 'lambda', 'load', 'loop', 'open', 'print', 'printf',
+      'proc', 'putc', 'puts', 'raise', 'rand', 'readline', 'readlines', 'require',
+      'select', 'sleep', 'split', 'sprintf', 'srand', 'sub', 'syscall', 'system', 'test',
+      'trace_var', 'trap', 'untrace_var'
+  ]);
+  var keywords = wordRE([
+ 			'alias', 'and', 'BEGIN', 'begin', 'break', 'case', 'class', 'def', 'defined', 'do', 'else',
+			'elsif', 'END', 'end', 'ensure', 'false', 'for', 'if', 
+			'in', 'module', 'next', 'not', 'or', 'redo', 'rescue', 'retry',
+			'return', 'self', 'super', 'then', 'true', 'undef', 'unless', 'until', 'when', 'while', 'yield'
+           ]);
+
+  var indentTokens = wordRE(["def", "case", "for", "while", "do", "module", "then", "unless", "\\(", "{"]);
+  var dedentTokens = wordRE(["end", "until", "\\)", "}"]);
+  var dedentPartial = prefixRE(["end", "until", "\\)", "}", "else", "elsif"]);
+
+  function readBracket(stream) {
+    var level = 0;
+    while (stream.eat("=")) ++level;
+    stream.eat("[");
+    return level;
+  }
+
+  function normal(stream, state) {
+    var ch = stream.next();
+    if (ch == "#") {
+      stream.skipToEnd();
+      return "comment";
+    } 
+    if (ch == "\"" || ch == "'")
+      return (state.cur = string(ch))(stream, state);
+   if (/\d/.test(ch)) {
+      stream.eatWhile(/[\w.%]/);
+      return "number";
+    }
+    if (/[\w_]/.test(ch)) {
+      stream.eatWhile(/[\w\\\-_.]/);
+      return "variable";
+    }
+    return null;
+  }
+
+  function string(quote) {
+    return function(stream, state) {
+      var escaped = false, ch;
+      while ((ch = stream.next()) != null) {
+        if (ch == quote && !escaped) break;
+        escaped = !escaped && ch == "\\";
+      }
+      if (!escaped) state.cur = normal;
+      return "string";
+    };
+  }
+    
+  return {
+    startState: function(basecol) {
+      return {basecol: basecol || 0, indentDepth: 0, cur: normal};
+    },
+
+    token: function(stream, state) {
+      if (stream.eatSpace()) return null;
+      var style = state.cur(stream, state);
+      var word = stream.current();
+      if (style == "variable") {
+        if (keywords.test(word)) style = "keyword";
+        else if (builtins.test(word)) style = "builtin";
+	else if (specials.test(word)) style = "variable-2";
+      }
+      if (indentTokens.test(word)) ++state.indentDepth;
+      else if (dedentTokens.test(word)) --state.indentDepth;
+      return style;
+    },
+
+    indent: function(state, textAfter) {
+      var closing = dedentPartial.test(textAfter);
+      return state.basecol + indentUnit * (state.indentDepth - (closing ? 1 : 0));
+    }
+  };
+});
+
+CodeMirror.defineMIME("text/x-ruby", "ruby");
+
 </script>
 
 </body>
